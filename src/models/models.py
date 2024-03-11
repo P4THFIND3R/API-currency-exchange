@@ -24,6 +24,3 @@ class Users(Base):
     def get_primary_key():
         return Users.user_id
 
-    def model_dump_to_pydantic(self):
-        return UserFromDB(user_id=self.user_id, username=self.username, password=self.password, role=self.role)
-

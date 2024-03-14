@@ -10,7 +10,7 @@ class AbstractRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def find_by_id(self, required_id: int):
+    async def get_by_id(self, required_id: int):
         raise NotImplementedError
 
 
@@ -25,7 +25,7 @@ class Repository(AbstractRepository):
         res = await self.session.execute(stmt)
         return res.scalar_one()
 
-    async def find_by_id(self, required_id: int) -> model:
+    async def get_by_id(self, required_id: int) -> model:
         model = self.model
         stmt = await self.session.execute(select(model).where(model.get_primary_key() == required_id))
         result: model = stmt.scalars().first()

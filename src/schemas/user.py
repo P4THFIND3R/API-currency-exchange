@@ -18,5 +18,11 @@ class UserFromDB(UserLogin):
     role: Roles
 
 
+class User(BaseModel):
+    user_id: int
+    username: str
+    role: Roles
+
+
 class UserAdd(UserLogin):
     role: Roles = Roles.guest

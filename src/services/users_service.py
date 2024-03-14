@@ -9,12 +9,16 @@ class UsersService:
     def __init__(self, uow: IUnitOfWork):
         self.uow = uow
 
-    async def get_user(self, user_id: int) -> UserFromDB:
-        async with self.uow:
-            user: UserFromDB = await self.uow.users_repos.find_by_id(user_id)
-            if user:
-                return UserFromDB.model_validate(user)
-            raise UserNotFoundError
+    async def get_user(self, user_id: int | None = None, username: str | None = None) -> UserFromDB:
+        if any((user_id, username)):
+            async with self.uow:
+                if user_id:
+                    user: UserFromDB = await self.uow.users_repos.find_by_id(user_id)
+                if username:
+                    user: UserFromDB = await self.uow.users_repos.find_by_username(username)
+                if user:
+                    return UserFromDB.model_validate(user)
+                raise UserNotFoundError
 
     async def add_user(self, user_data: UserRegistration):
         async with self.uow:

@@ -23,6 +23,8 @@ class Payload(BaseModel):
     role: Roles | str
     exp: float
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class Tokens(BaseModel):
     access_token: str

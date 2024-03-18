@@ -12,11 +12,12 @@ class SessionsService:
             if session:
                 return Session.model_validate(session)
 
-    async def create_session(self, session_data: SessionCreate):
+    async def add_session(self, session_data: SessionCreate):
         async with self.uow:
             # if there are more than 5 active sessions -> close them all
             user_sessions = await self.get_user_sessions(session_data.user_id)
             if len(user_sessions) >= 5:
+                print(f"user {session_data.user_id} sessions have been deleted")
                 await self.uow.sessions_repos.clear_user_sessions(session_data.user_id)
 
             # create new session record
@@ -25,6 +26,7 @@ class SessionsService:
 
             # committing
             await self.uow.commit()
+            print(f"Session {result.session_id} created")
             return result
 
     async def get_user_sessions(self, user_id) -> list[Session]:

@@ -11,7 +11,7 @@ class AuthenticationError(HTTPException):
         super().__init__(status_code=status_code, detail=detail)
 
 
-class TokensNotFoundError(HTTPException):
+class TokenNotFoundError(HTTPException):
     def __init__(self, detail: str = "A valid access and refresh token are required", status_code: int = 403):
         super().__init__(status_code=status_code, detail=detail)
 

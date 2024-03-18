@@ -1,14 +1,13 @@
-import jwt.exceptions
 from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
 
-from src.auth.dependencies import users_service_dep, sessions_service_dep, fingerprint_dep
+from src.auth.dependencies import users_service_dep, sessions_service_dep, fingerprint_dep, tokens_dep
 from src.schemas.user import User
 from src.auth import security
-from src.auth.schemas import Tokens
-from src.exceptions import TokensSetSuccessfully
+from src.auth.schemas import Tokens, Payload
+from src.exceptions import TokensSetSuccessfully, AccessTokenExpired
 
 auth_router = APIRouter(prefix='/auth')
 
@@ -19,27 +18,24 @@ async def check_user(userdata: Annotated[OAuth2PasswordRequestForm, Depends()], 
 
 
 @auth_router.post('')
-async def authentication(response: Response, request: Request,
+async def authentication(response: Response,
                          session_service: sessions_service_dep, fingerprint: fingerprint_dep,
                          user: User = Depends(check_user), ):
     # create access and refresh tokens
     access_token = security.create_access_token(user)
-    refresh_token = security.create_refresh_token(user, fingerprint)
-    session = await session_service.create_session(refresh_token)
+    refresh_token = security.create_session(user, fingerprint)
+    # add an entry to the db
+    session = await session_service.add_session(refresh_token)
 
     # setting tokens in cookies
     response.set_cookie('access_token', access_token, httponly=True)
-    response.set_cookie('refresh_token', refresh_token.refresh_token, httponly=True)
+    response.set_cookie('refresh_token', session.refresh_token, httponly=True)
 
-    # if a redirect was made from the authentication endpoint, we redirect it back
-    if request.headers.get('referer') == 'http://127.0.0.1:8080/auth/authorization':
-        return RedirectResponse(request.headers.get('referer'), headers=response.headers)
-
-    return TokensSetSuccessfully
+    return {'access_token': access_token}
 
 
 @auth_router.post('/update')
-async def update_tokens(response: Response, tokens: Annotated[Tokens, Depends(security.get_tokens)],
+async def update_tokens(response: Response, tokens: tokens_dep,
                         sessions_service: sessions_service_dep, users_service: users_service_dep,
                         fingerprint: fingerprint_dep):
     # get session by refresh token
@@ -47,24 +43,37 @@ async def update_tokens(response: Response, tokens: Annotated[Tokens, Depends(se
     # check if session is valid and not expired
     user_id = security.check_session(session, fingerprint)
 
+    # getting user
     user = await users_service.get_user(user_id)
     user = security.get_user_view(user)
 
     # create access and refresh tokens
     access_token = security.create_access_token(user)
-    refresh_token = await sessions_service.create_session(security.create_refresh_token(user, fingerprint))
-    print(refresh_token)
+    session = await sessions_service.add_session(security.create_session(user, fingerprint))
+    refresh_token = session.refresh_token
 
     # setting tokens in cookies
     response.set_cookie('access_token', access_token, httponly=True)
-    response.set_cookie('refresh_token', refresh_token.refresh_token, httponly=True)
+    response.set_cookie('refresh_token', refresh_token, httponly=True)
 
-    return TokensSetSuccessfully
+    return Tokens(access_token=access_token, refresh_token=refresh_token)
 
 
-@auth_router.post('/authorization')
-async def authorization(tokens: Tokens = Depends(security.get_tokens)):
-    if tokens:
-        payload = await security.check_jwt(tokens.access_token)
-        return payload
-    return RedirectResponse('/auth')
+@auth_router.post('/authorize')
+async def authorize(response: Response, tokens: tokens_dep,
+                    sessions_service: sessions_service_dep, users_service: users_service_dep,
+                    fingerprint: fingerprint_dep):
+    try:
+        payload = await security.check_access_token(tokens.access_token)
+    except AccessTokenExpired:
+        tokens = await update_tokens(response, tokens, sessions_service, users_service, fingerprint)
+        # setting tokens in cookies
+        response.set_cookie('access_token', tokens.access_token, httponly=True)
+        response.set_cookie('refresh_token', tokens.refresh_token, httponly=True)
+        payload = await security.check_access_token(tokens.access_token)
+    return Payload.model_validate(payload)
+
+
+@auth_router.get('/protected')
+async def protected(user_payload: Payload = Depends(authorize)):
+    return user_payload.role, user_payload.exp

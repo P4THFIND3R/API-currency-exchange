@@ -8,7 +8,7 @@ from typing import Annotated
 
 from src.config import settings
 from src.schemas.user import UserFromDB, User
-from src.exceptions import AuthenticationError, TokensNotFoundError, RefreshTokenExpired, TokenError
+from src.exceptions import AuthenticationError, TokenNotFoundError, RefreshTokenExpired, TokenError, AccessTokenExpired
 from src.auth.schemas import Session, SessionCreate, Tokens, Payload
 
 
@@ -30,8 +30,10 @@ def get_fingerprint(request: Request):
 def get_tokens(request: Request):
     access_token = request.cookies.get('access_token')
     refresh_token = request.cookies.get('refresh_token')
-    if access_token and refresh_token:
+    if refresh_token:
         return Tokens(access_token=access_token, refresh_token=refresh_token)
+    else:
+        raise TokenNotFoundError
 
 
 def create_access_token(user: User):
@@ -45,7 +47,7 @@ def create_access_token(user: User):
     return encoded_jwt
 
 
-def create_refresh_token(user: User, fingerprint: str):
+def create_session(user: User, fingerprint: str):
     create_date = datetime.now()
     refresh_token = token_hex(8)
 
@@ -59,14 +61,16 @@ def create_refresh_token(user: User, fingerprint: str):
     return session
 
 
-async def check_jwt(access_token):
+async def check_access_token(access_token):
+    if not access_token:
+        raise AccessTokenExpired
     try:
         payload = jwt.decode(access_token, key=settings.secret, algorithms=[settings.algorithm])
         return Payload.model_validate(payload)
     except jwt.exceptions.DecodeError:
         raise TokenError
     except jwt.exceptions.ExpiredSignatureError:
-        return RedirectResponse('/auth')
+        raise AccessTokenExpired
 
 
 def check_session(session: Session, fingerprint: str):

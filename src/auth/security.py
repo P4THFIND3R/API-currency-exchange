@@ -1,8 +1,7 @@
 from secrets import token_hex
 import jwt
 from datetime import datetime, timedelta
-from fastapi import Request
-from fastapi.responses import RedirectResponse
+from fastapi import Request, Response, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
 
@@ -85,3 +84,9 @@ def check_session(session: Session, fingerprint: str):
         raise TokenError
 
     return session.user_id
+
+
+def set_tokens_to_cookies(response: Response, tokens: Tokens):
+    response.set_cookie('access_token', tokens.access_token, httponly=True)
+    response.set_cookie('refresh_token', tokens.refresh_token, httponly=True)
+    return response

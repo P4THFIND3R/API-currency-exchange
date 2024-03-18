@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends, Request, Response
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, Depends, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
 
@@ -7,7 +6,7 @@ from src.auth.dependencies import users_service_dep, sessions_service_dep, finge
 from src.schemas.user import User
 from src.auth import security
 from src.auth.schemas import Tokens, Payload
-from src.exceptions import TokensSetSuccessfully, AccessTokenExpired
+from src.exceptions import AccessTokenExpired
 
 auth_router = APIRouter(prefix='/auth')
 
@@ -28,9 +27,7 @@ async def authentication(response: Response,
     session = await session_service.add_session(refresh_token)
 
     # setting tokens in cookies
-    response.set_cookie('access_token', access_token, httponly=True)
-    response.set_cookie('refresh_token', session.refresh_token, httponly=True)
-
+    security.set_tokens_to_cookies(response, Tokens(access_token=access_token, refresh_token=session.refresh_token))
     return {'access_token': access_token}
 
 
@@ -53,8 +50,7 @@ async def update_tokens(response: Response, tokens: tokens_dep,
     refresh_token = session.refresh_token
 
     # setting tokens in cookies
-    response.set_cookie('access_token', access_token, httponly=True)
-    response.set_cookie('refresh_token', refresh_token, httponly=True)
+    security.set_tokens_to_cookies(response, Tokens(access_token=access_token, refresh_token=refresh_token))
 
     return Tokens(access_token=access_token, refresh_token=refresh_token)
 
@@ -68,12 +64,11 @@ async def authorize(response: Response, tokens: tokens_dep,
     except AccessTokenExpired:
         tokens = await update_tokens(response, tokens, sessions_service, users_service, fingerprint)
         # setting tokens in cookies
-        response.set_cookie('access_token', tokens.access_token, httponly=True)
-        response.set_cookie('refresh_token', tokens.refresh_token, httponly=True)
+        security.set_tokens_to_cookies(response, tokens)
         payload = await security.check_access_token(tokens.access_token)
     return Payload.model_validate(payload)
 
 
 @auth_router.get('/protected')
-async def protected(user_payload: Payload = Depends(authorize)):
-    return user_payload.role, user_payload.exp
+async def get_protected(user_payload: Payload = Depends(authorize)):
+    return user_payload.role

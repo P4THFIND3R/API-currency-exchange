@@ -8,7 +8,7 @@ from src.auth import security
 from src.auth.schemas import Tokens, Payload
 from src.exceptions import AccessTokenExpired
 
-auth_router = APIRouter(prefix='/auth')
+router = APIRouter(prefix='/auth', tags=['Authentication'])
 
 
 async def check_user(userdata: Annotated[OAuth2PasswordRequestForm, Depends()], user_service: users_service_dep):
@@ -16,7 +16,7 @@ async def check_user(userdata: Annotated[OAuth2PasswordRequestForm, Depends()], 
     return security.authentication(userdata, user)
 
 
-@auth_router.post('')
+@router.post('')
 async def authentication(response: Response,
                          session_service: sessions_service_dep, fingerprint: fingerprint_dep,
                          user: User = Depends(check_user), ):
@@ -31,7 +31,7 @@ async def authentication(response: Response,
     return {'access_token': access_token}
 
 
-@auth_router.post('/update')
+@router.post('/update')
 async def update_tokens(response: Response, tokens: tokens_dep,
                         sessions_service: sessions_service_dep, users_service: users_service_dep,
                         fingerprint: fingerprint_dep):
@@ -55,7 +55,7 @@ async def update_tokens(response: Response, tokens: tokens_dep,
     return Tokens(access_token=access_token, refresh_token=refresh_token)
 
 
-@auth_router.post('/authorize')
+@router.post('/authorize')
 async def authorize(response: Response, tokens: tokens_dep,
                     sessions_service: sessions_service_dep, users_service: users_service_dep,
                     fingerprint: fingerprint_dep):
@@ -69,6 +69,6 @@ async def authorize(response: Response, tokens: tokens_dep,
     return Payload.model_validate(payload)
 
 
-@auth_router.get('/protected')
+@router.get('/protected')
 async def get_protected(user_payload: Payload = Depends(authorize)):
     return user_payload.role

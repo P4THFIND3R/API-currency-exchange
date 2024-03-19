@@ -26,3 +26,11 @@ class User(BaseModel):
 
 class UserAdd(UserLogin):
     role: Roles = Roles.guest
+
+
+class Payload(BaseModel):
+    username: str
+    role: Roles | str
+    exp: float
+
+    model_config = ConfigDict(from_attributes=True)

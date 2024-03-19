@@ -10,3 +10,7 @@ alembic~=1.13.1
 psycopg2~=2.9.9
 asyncpg~=0.29.0
 python-multipart~=0.0.9
+
+aiohttp~=3.9.3
+cachetools~=5.3.3
+aiocache~=0.12.2

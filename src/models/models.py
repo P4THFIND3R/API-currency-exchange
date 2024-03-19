@@ -1,9 +1,7 @@
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import BigInteger, String, ForeignKey
-from datetime import datetime
 
-from src.backend.db_config import Base
-from src.schemas.user import UserFromDB
+from src.database import Base
 
 
 class Roles(Base):

@@ -11,7 +11,6 @@ from sqlalchemy import pool
 from alembic import context
 
 from src.config import settings
-from src.backend.db_config import Base
 # чтобы алембик увидел таблицы, их нужно импортировать
 from src.models.models import *
 

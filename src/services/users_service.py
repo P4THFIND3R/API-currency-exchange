@@ -1,5 +1,3 @@
-from fastapi import HTTPException
-
 from src.schemas.user import UserFromDB, UserRegistration
 from src.utils.uow import IUnitOfWork
 from src.exceptions import UserNotFoundError

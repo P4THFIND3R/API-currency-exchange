@@ -1,5 +1,4 @@
 from pydantic_settings import BaseSettings
-from functools import lru_cache
 
 
 class Settings(BaseSettings):
@@ -18,6 +17,9 @@ class Settings(BaseSettings):
     DB_NAME: str
     DB_DRIVER_SYNC: str
     DB_DRIVER_ASYNC: str
+
+    # ext API parameters
+    CURRENCY_DATA_API_KEY: str
 
     @property
     def ASYNC_DATABASE_URL(self):

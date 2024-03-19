@@ -2,9 +2,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import BigInteger, ForeignKey
 from datetime import datetime
 
-from src.backend.db_config import Base
+from src.database import Base
 from src.models.models import Users
-from src.auth.schemas import Session as SessionSchema
 
 
 class Sessions(Base):

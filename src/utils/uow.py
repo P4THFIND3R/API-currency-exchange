@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.backend.db_config import async_session_maker
+from src.database import async_session_maker
 from src.repositories.repositories import SessionRepository, UserRepository
 
 

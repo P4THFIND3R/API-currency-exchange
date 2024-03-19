@@ -24,10 +24,6 @@ class User(BaseModel):
     role: Roles
 
 
-class UserAdd(UserLogin):
-    role: Roles = Roles.guest
-
-
 class Payload(BaseModel):
     username: str
     role: Roles | str

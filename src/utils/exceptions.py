@@ -12,5 +12,5 @@ class WrongAmountError(HTTPException):
 
 
 class ExternalApiError(HTTPException):
-    def __init__(self, detail: str = "You have not specified an amount to be converted", status_code: int = 500):
+    def __init__(self, detail: str = "An error occurred in the operation of the external API", status_code: int = 500):
         super().__init__(status_code=status_code, detail=detail)

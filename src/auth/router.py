@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
 
 from src.auth.dependencies import users_service_dep, sessions_service_dep, fingerprint_dep, tokens_dep
-from src.schemas.user import User
+from src.schemas.user import User, UserRegistration
 from src.auth import security
 from src.auth.schemas import Tokens, Payload
 from src.exceptions import AccessTokenExpired
@@ -16,7 +16,7 @@ async def check_user(userdata: Annotated[OAuth2PasswordRequestForm, Depends()], 
     return security.authentication(userdata, user)
 
 
-@router.post('')
+@router.post('/login')
 async def authentication(response: Response,
                          session_service: sessions_service_dep, fingerprint: fingerprint_dep,
                          user: User = Depends(check_user), ):
@@ -29,6 +29,12 @@ async def authentication(response: Response,
     # setting tokens in cookies
     security.set_tokens_to_cookies(response, Tokens(access_token=access_token, refresh_token=session.refresh_token))
     return {'access_token': access_token}
+
+
+@router.post('/register')
+async def registration(userdata: UserRegistration, users_service: users_service_dep):
+    user = await users_service.add_user(userdata)
+    return user
 
 
 @router.post('/update')

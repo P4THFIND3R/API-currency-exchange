@@ -1,4 +1,8 @@
 from pydantic_settings import BaseSettings
+from functools import lru_cache
+import os
+
+DOTENV = os.path.join(os.path.dirname(__file__), ".env")
 
 
 class Settings(BaseSettings):
@@ -9,6 +13,9 @@ class Settings(BaseSettings):
     refresh_exp: int
     access_exp: int
 
+    # ext API parameters
+    CURRENCY_DATA_API_KEY: str
+
     # db parameters
     DB_HOST: str
     DB_PORT: str
@@ -18,15 +25,27 @@ class Settings(BaseSettings):
     DB_DRIVER_SYNC: str
     DB_DRIVER_ASYNC: str
 
-    # ext API parameters
-    CURRENCY_DATA_API_KEY: str
-
     @property
     def ASYNC_DATABASE_URL(self):
         return f"postgresql+{self.DB_DRIVER_ASYNC}://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
+
+class ProductionSettings(Settings):
     class Config:
-        env_file = ".env"
+        env_file = os.path.join(os.path.dirname(__file__), ".env")
 
 
-settings = Settings()
+class TestingSettings(Settings):
+    class Config:
+        env_file = os.path.join(os.path.dirname(__file__), ".tests.env")
+
+
+@lru_cache
+def get_settings():
+    mode = os.getenv("MYAPP_MODE")
+    if mode in ("test", "testing"):
+        return TestingSettings()
+    return ProductionSettings()
+
+
+settings = get_settings()

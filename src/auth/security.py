@@ -1,7 +1,7 @@
 from secrets import token_hex
 import jwt
 from datetime import datetime, timedelta
-from fastapi import Request, Response, Depends
+from fastapi import Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import Annotated
 

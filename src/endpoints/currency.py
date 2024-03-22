@@ -14,7 +14,7 @@ async def get_currency(user: Payload = Depends(authorize)):
 
 
 @router.get('/exchange')
-async def exchange_currency(user: Payload = Depends(authorize)):
+async def get_exchange_currency(user: Payload = Depends(authorize)):
     return await get_live_list()
 
 

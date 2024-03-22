@@ -73,8 +73,3 @@ async def authorize(response: Response, tokens: tokens_dep,
         security.set_tokens_to_cookies(response, tokens)
         payload = await security.check_access_token(tokens.access_token)
     return Payload.model_validate(payload)
-
-
-@router.get('/protected')
-async def get_protected(user_payload: Payload = Depends(authorize)):
-    return user_payload.role

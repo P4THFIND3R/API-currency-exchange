@@ -16,3 +16,5 @@ cachetools~=5.3.3
 aiocache~=0.12.2
 pytest~=8.1.1
 httpx~=0.27.0
+gunicorn
+flower

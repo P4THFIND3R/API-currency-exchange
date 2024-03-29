@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     DB_DRIVER_SYNC: str
     DB_DRIVER_ASYNC: str
 
+    POSTGRES_DB: str = 'postgres'
+    POSTGRES_USER: str = 'postgres'
+    POSTGRES_PASSWORD: str = 'admin'
+
     @property
     def ASYNC_DATABASE_URL(self):
         return f"postgresql+{self.DB_DRIVER_ASYNC}://{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
@@ -35,6 +39,11 @@ class ProductionSettings(Settings):
         env_file = os.path.join(os.path.dirname(__file__), ".env")
 
 
+class DevelopmentSettings(Settings):
+    class Config:
+        env_file = os.path.join(os.path.dirname(__file__), ".dev.env")
+
+
 class TestingSettings(Settings):
     class Config:
         env_file = os.path.join(os.path.dirname(__file__), ".tests.env")
@@ -42,9 +51,13 @@ class TestingSettings(Settings):
 
 @lru_cache
 def get_settings():
-    mode = os.getenv("MYAPP_MODE")
+    mode = os.getenv("API_MODE")
     if mode in ("test", "testing"):
         return TestingSettings()
+    if mode in ("dev", "development"):
+        return DevelopmentSettings()
+    if mode in ("prod", "production"):
+        return ProductionSettings()
     return ProductionSettings()
 
 
